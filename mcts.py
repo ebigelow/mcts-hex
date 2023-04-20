@@ -76,9 +76,28 @@ class Mcts():
             self.limitType = 'iterations'
         self.explorationConstant = explorationConstant
         self.rollout = rolloutPolicy
+    
+    def start(self, init_state):
+        return self.search(treeNode(init_state, None), needDetails=True)
+    
+    # for keeping tree statistics
+    def consume_action(self, my_action, opponent_action):
+        opp_node = self.root.children[my_action]
+        next_node = None
+        
+        if opponent_action in opp_node.children:
+            next_node = opp_node.children[opponent_action]
+            next_node.parent = None
+        else:
+            next_state = opp_node.state.takeAction(opponent_action)
+            next_node = treeNode(next_state, None)
+       
+        return self.search(next_node, needDetails=True)
 
-    def search(self, initialState, needDetails=False):
-        self.root = treeNode(initialState, None)
+
+    def search(self, root, needDetails=False):
+        # self.root = treeNode(initialState, None)
+        self.root = root
 
         if self.limitType == 'time':
             timeLimit = time.time() + self.timeLimit / 1000

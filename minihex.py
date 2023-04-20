@@ -41,9 +41,9 @@ class HexGame(object):
     """
 
     def __init__(self, active_player, board,
-                 focus_player, connected_stones=None, debug=False):
+                 connected_stones=None, debug=False):
         self.board = board
-        # track number of empty feelds for speed
+        # track number of empty fields for speed
         self.empty_fields = np.count_nonzero(board == player.EMPTY)
 
         if debug:
@@ -83,11 +83,21 @@ class HexGame(object):
                         self.flood_fill((y, x))
 
         self.active_player = active_player
-        self.player = focus_player
         self.done = False
         self.winner = None
 
         self.actions = np.arange(self.board_size ** 2)
+    
+    def copy(self):
+        game = HexGame(
+            active_player=self.active_player,
+            board=self.board.copy(),
+            connected_stones=self.regions.copy(),
+        )
+
+        game.done = self.done
+        game.winner = self.winner
+        return game
 
     @property
     def board_size(self):
@@ -117,18 +127,15 @@ class HexGame(object):
 
         self.flood_fill((y, x))
 
-        winner = None
         regions = self.regions[self.active_player]
         if regions[-1, -1] == 1:
             self.done = True
-            winner = player(self.active_player)
-            self.winner = winner
+            self.winner = player(self.active_player)
         elif self.empty_fields <= 0:
             self.done = True
-            winner = None
 
         self.active_player = (self.active_player + 1) % 2
-        return winner
+        return self.winner
 
     def coordinate_to_action(self, coords):
         return np.ravel_multi_index(coords, (self.board_size, self.board_size))
@@ -201,7 +208,6 @@ class HexEnv(gym.Env):
         if self.initial_regions is None:
             self.simulator = HexGame(self.active_player,
                                      self.initial_board.copy(),
-                                     self.player,
                                      debug=self.debug)
             regions = self.simulator.regions.copy()
             self.initial_regions = regions
@@ -209,7 +215,6 @@ class HexEnv(gym.Env):
             regions = self.initial_regions.copy()
             self.simulator = HexGame(self.active_player,
                                      self.initial_board.copy(),
-                                     self.player,
                                      connected_stones=regions,
                                      debug=self.debug)
 
@@ -295,6 +300,31 @@ class HexEnv(gym.Env):
         self.previous_opponent_move = opponent_action
         return opponent_action
 
+
+def print_board(board):
+    print(" " * 6, end="")
+    for j in range(board.shape[1]):
+        print(" ", j + 1, " ", end="")
+        print("|", end="")
+    print("")
+    print(" " * 5, end="")
+    print("-" * (board.shape[1] * 6 - 1), end="")
+    print("")
+    for i in range(board.shape[1]):
+        print(" " * (1 + i * 3), i + 1, " ", end="")
+        print("|", end="")
+        for j in range(board.shape[1]):
+            if board[i, j] == player.EMPTY:
+                print("  O  ", end="")
+            elif board[i, j] == player.BLACK:
+                print("  B  ", end="")
+            else:
+                print("  W  ", end="")
+            print("|", end="")
+        print("")
+        print(" " * (i * 3 + 1), end="")
+        print("-" * (board.shape[1] * 7 - 1), end="")
+        print("")
 
 def random_policy(board, player, info):
     actions = np.arange(board.shape[0] * board.shape[1])
