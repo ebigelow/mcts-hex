@@ -5,6 +5,7 @@ author: William Tong (wtong@g.harvard.edu)
 """
 
 # <codecell>
+from datetime import datetime
 from multiprocessing import Pool
 
 import numpy as np
@@ -89,9 +90,8 @@ def run_game(board_size=5, iters=100):
 def run_game_proc(kwargs):
     return run_game(**kwargs)
 
-
 if __name__ == '__main__':
-    n_games = 10000
+    n_games = 300
     n_cores = 12
     board_size = 5
     mcts_iters = 100
@@ -112,7 +112,9 @@ if __name__ == '__main__':
     ]
 
     df = pd.DataFrame(out)
-    df.to_json(f'hex_data-{board_size}.json')
+
+    now = datetime.now().strftime('%m-%d-%Y_%H-%M-%S')
+    df.to_json(f'hex_data-{now}.json')
 
 
 
