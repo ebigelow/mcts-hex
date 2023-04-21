@@ -86,29 +86,33 @@ def run_game(board_size=5, iters=100):
 
     return transcript
 
-def run_game_proc(idx, **kwargs):
-    if idx % 100 == 0:
-        print('Running game', idx)
+def run_game_proc(kwargs):
     return run_game(**kwargs)
 
 
 if __name__ == '__main__':
     n_games = 10000
     n_cores = 12
+    board_size = 5
+    mcts_iters = 100
 
-    with Pool(n_cores) as p:
-        ts = p.map(run_game_proc, range(n_games))
+    with Pool(n_cores) as pool:
+        kwargs = dict(board_size=board_size, iters=mcts_iters)
+
+        ts = list(tqdm(
+            pool.imap(run_game_proc, [kwargs] * n_games), total=n_games))
+
     
     out = [
         {
-            'mcts_iters': 100,
-            'board_size': 5,
+            'mcts_iters': mcts_iters,
+            'board_size': board_size,
             'transcripts': ts
         }
     ]
 
     df = pd.DataFrame(out)
-    df.to_json('hex_data.json')
+    df.to_json(f'hex_data-{board_size}.json')
 
 
 
